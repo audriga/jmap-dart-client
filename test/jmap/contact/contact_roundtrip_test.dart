@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jmap_dart_client/http/http_client.dart';
 import 'package:jmap_dart_client/jmap/account_id.dart';
-import 'package:jmap_dart_client/jmap/contact/address_values.dart';
-import 'package:jmap_dart_client/jmap/contact/anniversary_values.dart';
+import 'package:jmap_dart_client/jmap/contact/address_value.dart';
+import 'package:jmap_dart_client/jmap/contact/anniversary_value.dart';
 import 'package:jmap_dart_client/jmap/contact/author.dart';
 import 'package:jmap_dart_client/jmap/contact/components.dart';
 import 'package:jmap_dart_client/jmap/contact/contact_api_version.dart';
@@ -10,25 +10,26 @@ import 'package:jmap_dart_client/jmap/contact/contact_card.dart';
 import 'package:jmap_dart_client/jmap/contact/context.dart';
 import 'package:jmap_dart_client/jmap/contact/crypto_key.dart';
 import 'package:jmap_dart_client/jmap/contact/directory.dart';
-import 'package:jmap_dart_client/jmap/contact/email_values.dart';
+import 'package:jmap_dart_client/jmap/contact/email_value.dart';
 import 'package:jmap_dart_client/jmap/contact/language_preference.dart';
-import 'package:jmap_dart_client/jmap/contact/localizations.dart';
+import 'package:jmap_dart_client/jmap/contact/link.dart';
 import 'package:jmap_dart_client/jmap/contact/media.dart';
 import 'package:jmap_dart_client/jmap/contact/name.dart';
 import 'package:jmap_dart_client/jmap/contact/name_sort_as.dart';
-import 'package:jmap_dart_client/jmap/contact/nicknames.dart';
+import 'package:jmap_dart_client/jmap/contact/nickname.dart';
 import 'package:jmap_dart_client/jmap/contact/note.dart';
-import 'package:jmap_dart_client/jmap/contact/online_service_values.dart';
-import 'package:jmap_dart_client/jmap/contact/contact_ids.dart';
+import 'package:jmap_dart_client/jmap/contact/online_service_value.dart';
+import 'package:jmap_dart_client/jmap/contact/contact_id.dart';
 import 'package:jmap_dart_client/jmap/contact/organization_unit.dart';
-import 'package:jmap_dart_client/jmap/contact/organization_values.dart';
+import 'package:jmap_dart_client/jmap/contact/organization_value.dart';
 import 'package:jmap_dart_client/jmap/contact/partial_date.dart';
 import 'package:jmap_dart_client/jmap/contact/phone_features_identifier.dart';
-import 'package:jmap_dart_client/jmap/contact/phone_values.dart';
+import 'package:jmap_dart_client/jmap/contact/phone_value.dart';
 import 'package:jmap_dart_client/jmap/contact/related_to_relation.dart';
-import 'package:jmap_dart_client/jmap/contact/related_to_values.dart';
+import 'package:jmap_dart_client/jmap/contact/related_to_value.dart';
 import 'package:jmap_dart_client/jmap/contact/scheduling_address.dart';
-import 'package:jmap_dart_client/jmap/contact/title_values.dart';
+import 'package:jmap_dart_client/jmap/contact/time_stamp_date.dart';
+import 'package:jmap_dart_client/jmap/contact/title_value.dart';
 import 'package:jmap_dart_client/jmap/core/id.dart';
 import 'package:jmap_dart_client/jmap/core/patch_object.dart';
 import 'package:jmap_dart_client/util/contact_util.dart';
@@ -55,10 +56,10 @@ void main() {
         },
         name: Name(
           components: {
-            Components(kind: 'given', value: 'Pepa'),
-            Components(kind: 'given2', value: 'Jane'),
-            Components(kind: 'surname', value: 'Pig'),
-            Components(kind: 'surname2', value: 'Heavens'),
+            Components(type:'NameComponent', kind: 'given', value: 'Pepa'),
+            Components(type:'NameComponent', kind: 'given2', value: 'Jane'),
+            Components(type:'NameComponent', kind: 'surname', value: 'Pig'),
+            Components(type:'NameComponent', kind: 'surname2', value: 'Heavens'),
           },
           isOrdered: true,
           full: 'Ms. Pepa Jane Pig Heavens',
@@ -122,21 +123,14 @@ void main() {
         },
         localizations: {
           'jp': {
-            'addresses/k26': LocalizedAddress(
-              components: [
-                {'kind': 'region', 'value': 'teito'},
-                {'kind': 'separator', 'value': ''},
-                {'kind': 'locality', 'value': 'chiyoda-ku'},
-                {'kind': 'separator', 'value': ''},
-                {'kind': 'street', 'value': '1-1-1 Chiyoda'},
-                {'kind': 'separator', 'value': ''},
-                {'kind': 'postcode', 'value': '100-0001'},
-                {'kind': 'separator', 'value': ''},
-                {'kind': 'country', 'value': 'Japan'},],
-              defaultSeparator: '',
-              full: 'Test full address',
-              isOrdered: true,
-            ),
+            'name': {
+              'components': [
+                {'kind': 'title',   'value': 'г-н'},
+                {'kind': 'given',   'value': 'Иван'},
+                {'kind': 'given2',  'value': 'Петрович'},
+                {'kind': 'surname', 'value': 'Васильев'},
+              ],
+            },
           },
         },
         organizations: {
@@ -308,6 +302,21 @@ void main() {
               day: 15,
             ),
           ),
+          AnniversaryId('k9'): const AnniversaryValue(
+            type: 'Anniversary',
+            kind: 'death',
+            date: TimestampDate(
+              utc: '2019-10-15T23:10:00Z',
+            ),
+          ),
+        },
+        links: {
+          'link3': Link(
+            type: 'Link',
+            kind: 'contact',
+            uri: 'mailto:contact@example.com',
+            pref: 1,
+          ),
         },
         created: '2025-11-04T10:00:00Z',
         updated: '2025-11-04T12:00:00Z',
@@ -322,6 +331,7 @@ void main() {
         contact: contact,
         apiVersion: ContactApiVersion.ietf,
       );
+      print(created);
       expect(created.created, isNotNull);
       final createdId = created.created!.values.first.id!.value;
       expect(createdId, isNotEmpty);
@@ -333,7 +343,6 @@ void main() {
         id: createdId,
         apiVersion: ContactApiVersion.ietf,
       );
-      print(fetched);
       expect(fetched, isNotNull);
       final roundtripped = fetched as ContactCard;
 
@@ -355,8 +364,20 @@ void main() {
       expect(roundtripped.directories, equals(contact.directories));
       expect(roundtripped.media, equals(contact.media));
       expect(roundtripped.cryptoKeys, equals(contact.cryptoKeys));
-      expect(roundtripped.localizations!['jp']!.keys,
-      containsAll(['addresses/k23/full', 'addresses/k23/components']));
+      expect(roundtripped.links, equals(contact.links));
+      final jpLoc = roundtripped.localizations!['jp']!;
+      expect(jpLoc.keys, contains('name/components'));
+
+      final components = jpLoc['name/components'];
+      expect(
+        components,
+        equals([
+          {'kind': 'title',   'value': 'г-н'},
+          {'kind': 'given',   'value': 'Иван'},
+          {'kind': 'given2',  'value': 'Петрович'},
+          {'kind': 'surname', 'value': 'Васильев'},
+        ]),
+      );
       expect(roundtripped.anniversaries, equals(contact.anniversaries));
       final patch = PatchObject({
         'name/components/2/value': 'Pig-Updated',

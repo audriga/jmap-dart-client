@@ -1,35 +1,27 @@
 import 'package:equatable/equatable.dart';
-import 'contact_api_version.dart';
+import 'package:json_annotation/json_annotation.dart';
 
+part 'author.g.dart';
+
+@JsonSerializable()
 class Author with EquatableMixin {
+  @JsonKey(includeIfNull: false, name: '@type')
+  final String? type;
+  @JsonKey(includeIfNull: false)
   final String? name;
+  @JsonKey(includeIfNull: false)
   final String? uri;
 
-  Author({this.name, this.uri});
+  Author({this.type = 'Author', this.name, this.uri});
 
-  factory Author.fromJson(Map<String, dynamic> json) {
-    return Author(
-      name: json['name'] as String?,
-      uri: json['uri'] as String?,
-    );
-  }
+  factory Author.fromJson(Map<String, dynamic> json) =>
+      _$AuthorFromJson(json);
 
-  Map<String, dynamic> toVersionedJson(ContactApiVersion apiVersion) {
-    final map = <String, dynamic>{};
-
-    void writeNotNull(String key, dynamic value) {
-      if (value != null) map[key] = value;
-    }
-
-    writeNotNull('@type', 'Author');
-    writeNotNull('name', name);
-    writeNotNull('uri', uri);
-    return map;
-  }
+  Map<String, dynamic> toJson() => _$AuthorToJson(this);
 
   @override
-  List<Object?> get props => [name, uri];
+  List<Object?> get props => [type, name, uri];
 
   @override
-  String toString() => 'Author(name: $name, uri: $uri)';
+  String toString() => 'Author(type: $type, name: $name, uri: $uri)';
 }

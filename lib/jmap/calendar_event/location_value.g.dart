@@ -1,17 +1,18 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'sort_as.dart';
+part of 'location_value.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-SortAs _$SortAsFromJson(Map<String, dynamic> json) => SortAs(
-      surname: json['surname'] as String?,
-      given: json['given'] as String?,
+LocationValue _$LocationValueFromJson(Map<String, dynamic> json) =>
+    LocationValue(
+      type: json['@type'] as String? ?? 'Location',
+      name: json['name'] as String?,
     );
 
-Map<String, dynamic> _$SortAsToJson(SortAs instance) {
+Map<String, dynamic> _$LocationValueToJson(LocationValue instance) {
   final val = <String, dynamic>{};
 
   void writeNotNull(String key, dynamic value) {
@@ -20,7 +21,7 @@ Map<String, dynamic> _$SortAsToJson(SortAs instance) {
     }
   }
 
-  writeNotNull('surname', instance.surname);
-  writeNotNull('given', instance.given);
+  writeNotNull('@type', instance.type);
+  writeNotNull('name', instance.name);
   return val;
 }

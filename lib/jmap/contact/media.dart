@@ -1,17 +1,27 @@
 import 'package:equatable/equatable.dart';
+import 'package:jmap_dart_client/http/converter/contact/context_map_converter.dart';
+import 'package:jmap_dart_client/util/util.dart';
+import 'package:json_annotation/json_annotation.dart';
 import 'context.dart';
-import 'package:jmap_dart_client/http/converter/contact/context_value_converter.dart';
 
+part 'media.g.dart';
+
+@JsonSerializable(includeIfNull: false)
 class Media with EquatableMixin {
-  final String kind; 
-  final String? uri;    
+  @JsonKey(name: '@type')
+  final String? type;
+  final String kind;
+  final String? uri;
   final String? mediaType;
+  @ContextsMapConverter()
   final Map<Context, bool>? contexts;
+  @JsonKey(fromJson: parseIntNullable)
   final int? pref;
   final String? label;
   final String? blobId;
 
   Media({
+    this.type = 'Media',
     required this.kind,
     this.uri,
     this.mediaType,
@@ -21,48 +31,18 @@ class Media with EquatableMixin {
     this.blobId,
   });
 
-  factory Media.fromJson(Map<String, dynamic> json) {
-    return Media(
-      kind: json['kind'] as String,
-      uri: json['uri'] as String?,
-      mediaType: json['mediaType'] as String?,
-      contexts: (json['contexts'] as Map<String, dynamic>?)?.map(
-        (k, v) => ContextConverter().parseEntry(k, v),
-      ),
-      pref: json['pref'] as int?,
-      label: json['label'] as String?,
-      blobId: json['blobId'] as String?,
-    );
-  }
+  factory Media.fromJson(Map<String, dynamic> json) => _$MediaFromJson(json);
 
-  Map<String, dynamic> toJson() {
-    final map = <String, dynamic>{};
-
-    void writeNotNull(String key, dynamic value) {
-      if (value != null) map[key] = value;
-    }
-
-    writeNotNull('kind', kind);
-    writeNotNull('uri', uri);
-    writeNotNull('mediaType', mediaType);
-    if (contexts != null) {
-      writeNotNull(
-        'contexts',
-        contexts!.map((k, v) => ContextConverter().toJson(k, v)),
-      );
-    }
-    writeNotNull('pref', pref);
-    writeNotNull('label', label);
-    writeNotNull('blobId', blobId);
-    return map;
-  }
+  Map<String, dynamic> toJson() => _$MediaToJson(this);
 
   @override
-  List<Object?> get props => [kind, uri, mediaType, contexts, pref, label, blobId];
+  List<Object?> get props =>
+      [type, kind, uri, mediaType, contexts, pref, label, blobId];
 
   @override
   String toString() {
     return 'Media('
+        '@type: $type, '
         'kind: $kind, '
         'uri: $uri, '
         'mediaType: $mediaType, '

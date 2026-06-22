@@ -1,61 +1,62 @@
 import 'package:equatable/equatable.dart';
-import 'context.dart';
-import 'package:jmap_dart_client/http/converter/contact/context_value_converter.dart';
+import 'package:jmap_dart_client/http/converter/contact/context_map_converter.dart';
+import 'package:jmap_dart_client/util/util.dart';
+import 'package:json_annotation/json_annotation.dart';
 
+import 'context.dart';
+
+part 'personal_info.g.dart';
+
+@JsonSerializable()
 class PersonalInfo with EquatableMixin {
+  @JsonKey(includeIfNull: false, name: '@type')
+  final String? type; 
+
   final String kind;
 
-  final int? level;
+  final String value;
 
+  @JsonKey(includeIfNull: false)
+  final String? level;
+
+  @ContextsMapConverter()
+  @JsonKey(includeIfNull: false)
   final Map<Context, bool>? contexts;
 
+  @JsonKey(includeIfNull: false, fromJson: parseIntNullable)
+  final int? listAs;
+
+  @JsonKey(includeIfNull: false)
   final String? label;
 
   PersonalInfo({
+    this.type = 'PersonalInfo',
     required this.kind,
+    required this.value,
     this.level,
     this.contexts,
+    this.listAs,
     this.label,
   });
 
-  factory PersonalInfo.fromJson(Map<String, dynamic> json) {
-    return PersonalInfo(
-      kind: json['kind'] as String,
-      level: json['level'] as int?,
-      contexts: (json['contexts'] as Map<String, dynamic>?)?.map(
-        (k, v) => ContextConverter().parseEntry(k, v),
-      ),
-      label: json['label'] as String?,
-    );
-  }
+  factory PersonalInfo.fromJson(Map<String, dynamic> json) =>
+      _$PersonalInfoFromJson(json);
 
-  Map<String, dynamic> toJson() {
-    final map = <String, dynamic>{};
-    void writeNotNull(String key, dynamic value) {
-      if (value != null) map[key] = value;
-    }
-
-    writeNotNull('kind', kind);
-    writeNotNull('level', level);
-    if (contexts != null) {
-      writeNotNull(
-        'contexts',
-        contexts!.map((k, v) => ContextConverter().toJson(k, v)),
-      );
-    }
-    writeNotNull('label', label);
-    return map;
-  }
+  Map<String, dynamic> toJson() => _$PersonalInfoToJson(this);
 
   @override
-  List<Object?> get props => [kind, level, contexts, label];
+  List<Object?> get props =>
+      [type, kind, value, level, contexts, listAs, label];
 
   @override
   String toString() {
     return 'PersonalInfo('
+        'type: $type, '
         'kind: $kind, '
+        'value: $value, '
         'level: $level, '
         'contexts: $contexts, '
+        'listAs: $listAs, '
         'label: $label'
         ')';
   }

@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:jmap_dart_client/jmap/calendar_event/alert_value.dart';
 import 'package:jmap_dart_client/jmap/calendar_event/by_day.dart';
 import 'package:jmap_dart_client/jmap/calendar_event/calendar_event.dart';
-import 'package:jmap_dart_client/jmap/calendar_event/keywords.dart';
+import 'package:jmap_dart_client/jmap/calendar_event/keyword.dart';
 import 'package:jmap_dart_client/jmap/calendar_event/location_value.dart';
 import 'package:jmap_dart_client/jmap/calendar_event/participant_value.dart';
 import 'package:jmap_dart_client/jmap/calendar_event/recurrence_rules.dart';
@@ -126,7 +126,6 @@ void main() {
       );
 
       final fetched1 = getResp1!;
-     
       expect(fetched1.title, equals(calendar.title));
       expect(fetched1.description, equals(calendar.description));
       expect(fetched1.calendarIds, equals(calendar.calendarIds));

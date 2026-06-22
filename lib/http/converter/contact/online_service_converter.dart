@@ -1,5 +1,4 @@
-import 'package:jmap_dart_client/jmap/contact/contact_api_version.dart';
-import 'package:jmap_dart_client/jmap/contact/online_service_values.dart';
+import 'package:jmap_dart_client/jmap/contact/online_service_value.dart';
 
 class OnlineServiceValueConverter {
   MapEntry<String, OnlineServiceValue> parseEntry(String key, dynamic value) {
@@ -12,10 +11,8 @@ class OnlineServiceValueConverter {
 
   MapEntry<String, dynamic> toJson(
     String id,
-    OnlineServiceValue value, {
-    ContactApiVersion apiVersion = ContactApiVersion.ietf,
-  }) {
-    final json = value.toVersionedJson(apiVersion);
+    OnlineServiceValue value) {
+    final json = value.toJson();
     return MapEntry(id, json);
   }
 }

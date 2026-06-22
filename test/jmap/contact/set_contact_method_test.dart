@@ -3,27 +3,29 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http_mock_adapter/http_mock_adapter.dart';
 import 'package:jmap_dart_client/http/http_client.dart';
 import 'package:jmap_dart_client/jmap/account_id.dart';
-import 'package:jmap_dart_client/jmap/contact/address_values.dart';
-import 'package:jmap_dart_client/jmap/contact/anniversary_values.dart';
+import 'package:jmap_dart_client/jmap/contact/address_value.dart';
+import 'package:jmap_dart_client/jmap/contact/anniversary_value.dart';
 import 'package:jmap_dart_client/jmap/contact/card.dart';
-import 'package:jmap_dart_client/jmap/contact/contact_ids.dart';
+import 'package:jmap_dart_client/jmap/contact/contact_id.dart';
 import 'package:jmap_dart_client/jmap/contact/components.dart';
 import 'package:jmap_dart_client/jmap/contact/contact_card.dart';
 import 'package:jmap_dart_client/jmap/contact/contact_api_version.dart';
 import 'package:jmap_dart_client/jmap/contact/context.dart';
-import 'package:jmap_dart_client/jmap/contact/email_values.dart';
+import 'package:jmap_dart_client/jmap/contact/email_value.dart';
 import 'package:jmap_dart_client/jmap/contact/language_preference.dart';
 import 'package:jmap_dart_client/jmap/contact/name.dart';
-import 'package:jmap_dart_client/jmap/contact/nicknames.dart';
-import 'package:jmap_dart_client/jmap/contact/online_service_values.dart';
+import 'package:jmap_dart_client/jmap/contact/nickname.dart';
+import 'package:jmap_dart_client/jmap/contact/online_service_value.dart';
 import 'package:jmap_dart_client/jmap/contact/organization_unit.dart';
-import 'package:jmap_dart_client/jmap/contact/organization_values.dart';
-import 'package:jmap_dart_client/jmap/contact/phone_values.dart';
+import 'package:jmap_dart_client/jmap/contact/organization_value.dart';
+import 'package:jmap_dart_client/jmap/contact/phone_value.dart';
+import 'package:jmap_dart_client/jmap/contact/pronouns.dart';
 import 'package:jmap_dart_client/jmap/contact/related_to_relation.dart';
-import 'package:jmap_dart_client/jmap/contact/related_to_values.dart';
-import 'package:jmap_dart_client/jmap/contact/speaak_to_as.dart';
+import 'package:jmap_dart_client/jmap/contact/related_to_value.dart';
+import 'package:jmap_dart_client/jmap/contact/speak_to_as.dart';
 import 'package:jmap_dart_client/jmap/contact/street.dart';
-import 'package:jmap_dart_client/jmap/contact/title_values.dart';
+import 'package:jmap_dart_client/jmap/contact/time_stamp_date.dart';
+import 'package:jmap_dart_client/jmap/contact/title_value.dart';
 import 'package:jmap_dart_client/jmap/core/id.dart';
 import 'package:jmap_dart_client/jmap/core/patch_object.dart';
 import 'package:jmap_dart_client/util/contact_util.dart';
@@ -50,7 +52,7 @@ void main() {
         ),
         organizations: {
           OrganizationName('a49d'):
-              OrganizationValue(type: 'organize', name: 'test',  units: [OrganizationUnit(name: '123')],)
+              OrganizationValue(type: 'OrgUnit', name: 'test',  units: [OrganizationUnit(name: '123')],)
         },
         phones: {
           PhoneId('a49d'): PhoneValue(
@@ -60,10 +62,12 @@ void main() {
         },
         anniversaries: {
           AnniversaryId('123'): const AnniversaryValue(
-            type: 'organize',
-            anniversaryType: 'test',
-            date: '12-04-2023',
-          )
+            type: 'Anniversary',
+            kind: 'death',
+            date: TimestampDate(
+              utc: '2019-10-15T23:10:00Z',
+            ),
+          ),
         },
         relatedTo: {
           RelatedToName('Frankie'): RelatedToValue(
@@ -72,13 +76,17 @@ void main() {
           )
         },
         speakToAs: SpeakToAs(
-          type: 'SpeakToAs',
-          grammaticalGender: 'male',
-          pronouns: 'he/him',
-        ),
+        grammaticalGender: 'male',
+        pronouns: {
+          'k1': Pronouns(
+            pronouns: 'he/him',
+            pref: 1,
+          ),
+        },
+      ),
         emails: {
           EmailId('123'): EmailValue(
-            type: 'organize',
+            type: 'EmailAddress',
             email: 'test@gmail.com',
             label: '12-04-2023',
             pref: 1,
@@ -91,8 +99,6 @@ void main() {
             contexts: {Context('work'): true},
             street: {
               Street(
-                typeName: 'StreetComponent',
-                type: 'name',
                 value: 'dudweiler',
               )
             },
@@ -181,13 +187,13 @@ void main() {
           },
           phones: {
             PhoneId('1'): PhoneValue(
-              type: 'mobile',
+              type: 'Phone',
               phone: '+4912345678',
               number: '1111',
               contexts: {Context('private'): true},
             ),
             PhoneId('2'): PhoneValue(
-              type: 'home',
+              type: 'Phone',
               phone: '+4968123456',
               number: '1111',
               contexts: {Context('work'): true},
@@ -195,7 +201,7 @@ void main() {
           },
           addresses: {
             AddressId('1'): AddressValue(
-              type: 'home',
+              type: 'Address',
               street: {Street(value: 'Main Street 2')},
               locality: 'home',
               region: 'SL',
@@ -204,7 +210,7 @@ void main() {
               coordinates: '5.12,9.121',
             ),
             AddressId('2'): AddressValue(
-              type: 'work',
+              type: 'Address',
               street: {Street(value: 'Office Park 10')},
               locality: 'work',
               postcode: '10117',
@@ -391,7 +397,6 @@ void main() {
         ),
         apiVersion: ContactApiVersion.cyrus,
       );
-
       expect(created.created, isNotNull);
 
       final id = created.created!.values.first.id!;

@@ -7,6 +7,7 @@ import 'package:jmap_dart_client/jmap/contact/contact_api_version.dart';
 import 'package:jmap_dart_client/jmap/contact/crypto_key.dart';
 import 'package:jmap_dart_client/jmap/contact/directory.dart';
 import 'package:jmap_dart_client/jmap/contact/language_preference.dart';
+import 'package:jmap_dart_client/jmap/contact/link.dart';
 import 'package:jmap_dart_client/jmap/contact/media.dart';
 import 'package:jmap_dart_client/jmap/contact/name.dart';
 import 'package:jmap_dart_client/http/converter/contact/email_value_converter.dart';
@@ -15,9 +16,9 @@ import 'package:jmap_dart_client/http/converter/contact/address_value_converter.
 import 'package:jmap_dart_client/http/converter/contact/organization_value_converter.dart';
 import 'package:jmap_dart_client/http/converter/contact/related_to_value_converter.dart';
 import 'package:jmap_dart_client/http/converter/contact/title_value_converter.dart';
-import 'package:jmap_dart_client/jmap/contact/nicknames.dart';
+import 'package:jmap_dart_client/jmap/contact/nickname.dart';
 import 'package:jmap_dart_client/jmap/contact/note.dart';
-import 'package:jmap_dart_client/jmap/contact/online_service_values.dart';
+import 'package:jmap_dart_client/jmap/contact/online_service_value.dart';
 import 'package:jmap_dart_client/jmap/contact/personal_info.dart';
 import 'package:jmap_dart_client/jmap/contact/scheduling_address.dart';
 import 'package:jmap_dart_client/jmap/core/id.dart';
@@ -38,6 +39,9 @@ class ContactCard extends Contact {
   final Map<String, CryptoKey>? cryptoKeys;
   final Map<String, Map<String, dynamic>>? localizations;
   final Map<String, PersonalInfo>? personalInfo;
+  final Map<String, Link>? links; 
+
+  
 
   ContactCard({
     super.id,
@@ -64,6 +68,7 @@ class ContactCard extends Contact {
     this.cryptoKeys,
     this.localizations,
     this.personalInfo,
+    this.links,
   });
 
   /// Creates a ContactCard from a IETF formatted JSON map.
@@ -135,6 +140,12 @@ class ContactCard extends Contact {
           PersonalInfo.fromJson(v as Map<String, dynamic>),
         ),
       ),
+      links: (json['links'] as Map<String, dynamic>?)?.map(
+        (k, v) => MapEntry(
+          k,
+          Link.fromJson(v as Map<String, dynamic>),
+        ),
+      ),
     );
   }
 
@@ -200,97 +211,95 @@ class ContactCard extends Contact {
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{};
 
-    if (id != null) map['id'] = id!.value;
-    map['created'] = created;
-    map['updated'] = updated;
-    map['name'] = name?.toJson(ContactApiVersion.ietf);
-    map['addressBookIds'] = addressBookIds;
-    map['blobId'] = blobId;
+    void writeNotNull(String key, dynamic value) {
+      if (value != null) map[key] = value;
+    }
 
-    map['emails'] = emails?.map(
+    if (id != null) map['id'] = id!.value;
+    writeNotNull('created', created);
+    writeNotNull('updated', updated);
+    writeNotNull('name', name?.toJson(ContactApiVersion.ietf));
+    writeNotNull('addressBookIds', addressBookIds);
+    writeNotNull('blobId', blobId);
+
+    writeNotNull('emails', emails?.map(
       (k, v) =>
           EmailValueConverter().toJson(k, v, apiVersion: ContactApiVersion.ietf),
-    );
+    ));
 
-    map['phones'] = phones?.map(
+    writeNotNull('phones', phones?.map(
       (k, v) => PhoneValueConverter().toJson(k, v, apiVersion: ContactApiVersion.ietf),
-    );
+    ));
 
-
-    map['addresses'] = addresses?.map(
+    writeNotNull('addresses', addresses?.map(
       (k, v) => AddressValueConverter().toJson(k, v, apiVersion: ContactApiVersion.ietf),
-    );
+    ));
 
-    map['organizations'] = organizations?.map(
+    writeNotNull('organizations', organizations?.map(
       (k, v) => OrganizationValueConverter().toJson(
         k,
         v,
         apiVersion: ContactApiVersion.ietf),
-    );
+    ));
 
-    map['relatedTo'] = relatedTo?.map(
+    writeNotNull('relatedTo', relatedTo?.map(
       (k, v) => RelatedToValueConverter().toJson(k, v),
-    );
+    ));
 
-    map['titles'] = titles?.map(
+    writeNotNull('titles', titles?.map(
       (k, v) => TitleValueConverter().toJson(k, v),
-    );
+    ));
 
-    map['nicknames'] = nicknames?.map(
+    writeNotNull('nicknames', nicknames?.map(
       (k, v) => MapEntry(k, v.toJson()),
-    );
+    ));
 
-    map['onlineServices'] = onlineServices?.map(
-      (k, v) => OnlineServiceValueConverter().toJson(
-        k,
-        v,
-        apiVersion: ContactApiVersion.ietf,
-      ),
-    );
+    writeNotNull('onlineServices', onlineServices?.map(
+      (k, v) => OnlineServiceValueConverter().toJson(k, v),
+    ));
 
-    map['preferredLanguages'] = preferredLanguages?.map(
-      (k, v) => LanguagePrefConverter().toJson(
-        k,
-        v,
-        apiVersion: ContactApiVersion.ietf,
-      ),
-    );
-    map['keywords'] = keywords;
+    writeNotNull('preferredLanguages', preferredLanguages?.map(
+      (k, v) => LanguagePrefConverter().toJson(k, v),
+    ));
 
-    map['notes'] = notes?.map(
-      (k, v) => NoteValueConverter().toJson(
-        k,
-        v,
-        apiVersion: ContactApiVersion.ietf,
-      ),
-    );
-    map['schedulingAddresses'] = schedulingAddresses?.map(
+    writeNotNull('keywords', keywords);
+
+    writeNotNull('notes', notes?.map(
+      (k, v) => NoteValueConverter().toJson(k, v),
+    ));
+
+    writeNotNull('schedulingAddresses', schedulingAddresses?.map(
       (k, v) => MapEntry(k, v.toJson()),
-    );
-    map['directories'] = directories?.map(
+    ));
+
+    writeNotNull('directories', directories?.map(
       (k, v) => MapEntry(k, v.toJson()),
-    );
-    map['media'] = media?.map(
+    ));
+
+    writeNotNull('media', media?.map(
       (k, v) => MapEntry(k, v.toJson()),
-    );
-    map['cryptoKeys'] = cryptoKeys?.map(
+    ));
+
+    writeNotNull('cryptoKeys', cryptoKeys?.map(
       (k, v) => MapEntry(k, v.toJson()),
-    );
-    map['localizations'] = localizations?.map(
-      (lang, inner) => MapEntry(
-        lang,
-        inner.map((ptr, v) => MapEntry(ptr, v.toJson())),
-      ),
-    );
-    map['personalInfo'] = personalInfo?.map(
-      (k, v) => MapEntry(
-        k,
-        v.toJson(),
-      ),
-    );
-    map['anniversaries'] = anniversaries?.map(
+    ));
+
+    writeNotNull('localizations', localizations?.map(
+      (lang, inner) => MapEntry(lang, Map<String, dynamic>.from(inner)),
+    ));
+
+    writeNotNull('personalInfo', personalInfo?.map(
+      (k, v) => MapEntry(k, v.toJson()),
+    ));
+
+    writeNotNull('anniversaries', anniversaries?.map(
       (k, v) => AnniversaryValueConverter().toJson(k, v),
-    );
+    ));
+
+    writeNotNull('links', links?.map(
+      (k, v) => MapEntry(k, v.toJson()),
+    ));
+
     validateAndRemoveIetfFields(map);
     return map;
   }
@@ -315,13 +324,13 @@ class ContactCard extends Contact {
         anniversaries,
         keywords,
         notes,
-        schedulingAddresses, 
+        schedulingAddresses,
         directories,
         media,
         cryptoKeys,
         localizations,
         personalInfo,
-        anniversaries
+        links,
       ];
 
   @override
@@ -342,14 +351,15 @@ class ContactCard extends Contact {
         'preferredLanguages: $preferredLanguages, '
         'keywords: $keywords, '
         'notes: $notes, '
-        'blobId: $blobId'
-        'schedulingAddresses: $schedulingAddresses'
-        'directories: $directories'
-        'media: $media'
-        'cryptoKeys: $cryptoKeys'
-        'localizations: $localizations'
-        'personalInfo: $personalInfo'
-        'anniversaries: $anniversaries'
+        'blobId: $blobId, '
+        'schedulingAddresses: $schedulingAddresses, '
+        'directories: $directories, '
+        'media: $media, '
+        'cryptoKeys: $cryptoKeys, '
+        'localizations: $localizations, '
+        'personalInfo: $personalInfo, '
+        'anniversaries: $anniversaries, '
+        'links: $links'
         ')';
   }
 }
