@@ -99,8 +99,6 @@ void main() {
             contexts: {Context('work'): true},
             street: {
               Street(
-                typeName: 'StreetComponent',
-                type: 'name',
                 value: 'dudweiler',
               )
             },
