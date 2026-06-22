@@ -48,6 +48,7 @@ class QueryMailboxMethod extends QueryMethod with FilterAsTree, SortAsTree {
       }
     }
     
+    writeNotNull('position', position);
     writeNotNull('sortAsTree', sortAsTree);
     writeNotNull('filterAsTree', filterAsTree);
     writeNotNull('filter', filter?.toJson());
