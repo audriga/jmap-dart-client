@@ -497,6 +497,8 @@ class FileNodeUtil {
     return parsed;
   }
 
+  // TODO: add paging once FileNode/query is available. 
+  // Currently this fetches all nodes in one call, which may be inefficient for large accounts.
   /// Fetches all FileNode items.
   static Future<GetFileNodeResponse> getFileNodes({
     required HttpClient client,
