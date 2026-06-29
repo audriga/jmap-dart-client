@@ -83,6 +83,15 @@ void main() {
       expect(resp.list, isNotEmpty);
     });
 
+    test('get all mailboxes paged returns a list', () async {
+      final mailboxes = await MailboxUtil.getAllMailboxes(
+        client: httpClient,
+        accountId: accountId,
+      );
+
+      expect(mailboxes, isA<List>());
+    });
+
     test('changes returns a valid new state', () async {
       final getResp = await MailboxUtil.getMailboxes(
         client: httpClient,

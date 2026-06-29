@@ -149,5 +149,14 @@ void main() {
 
       expect(changesResp.newState, isNotNull);
     });
+
+    test('get all emails returns a list', () async {
+      final emails = await EmailUtil.getAllEmails(
+        client: httpClient,
+        accountId: accountId,
+      );
+
+      expect(emails, isA<List>());
+    });
   });
 }

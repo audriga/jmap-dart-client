@@ -1,4 +1,9 @@
+import 'dart:typed_data';
+import 'package:dio/dio.dart';
 import 'package:jmap_dart_client/http/http_client.dart';
+import 'package:jmap_dart_client/jmap/mail/email/import/import_email_method.dart';
+import 'package:jmap_dart_client/jmap/mail/email/import/import_email_response.dart';
+import 'package:jmap_dart_client/util/blob_util.dart';
 import 'package:jmap_dart_client/jmap/account_id.dart';
 import 'package:jmap_dart_client/jmap/core/id.dart';
 import 'package:jmap_dart_client/jmap/core/patch_object.dart';
@@ -20,6 +25,7 @@ import 'package:jmap_dart_client/jmap/mail/email/submission/email_submission.dar
 import 'package:jmap_dart_client/jmap/mail/email/submission/email_submission_id.dart';
 import 'package:jmap_dart_client/jmap/mail/email/submission/set/set_email_submission_method.dart';
 import 'package:jmap_dart_client/jmap/mail/email/submission/set/set_email_submission_response.dart';
+import 'package:jmap_dart_client/util/file_node_util.dart';
 
 /// Utility class for creating, updating, deleting, and fetching emails.
 class EmailUtil {
@@ -70,7 +76,7 @@ class EmailUtil {
     return _executeSet(client: client, method: method, methodCallId: methodCallId);
   }
 
-  /// Creates a new email.
+  /// Creates a new email on the server.
   static Future<SetEmailResponse> createEmail({
     required HttpClient client,
     required AccountId accountId,
@@ -81,7 +87,7 @@ class EmailUtil {
     return _executeSet(client: client, method: method);
   }
 
-  /// Updates an email by applying a patch.
+  /// Updates an existing email.
   static Future<SetEmailResponse> updateEmail({
     required HttpClient client,
     required AccountId accountId,
@@ -102,7 +108,7 @@ class EmailUtil {
     return _executeSet(client: client, method: method);
   }
 
-  /// Fetches all email ids by paging through Email/query in batches until all ids are collected.
+  /// Fetches all email ids via paged Email/query requests.
   static Future<List<Id>> getAllEmailIds({
     required HttpClient client,
     required AccountId accountId,
@@ -164,12 +170,14 @@ class EmailUtil {
     required AccountId accountId,
     EmailFilterCondition? filter,
     UnsignedInt? limit,
+    int? position,
     bool? collapseThreads,
     MethodCallId? methodCallId,
   }) async {
     final method = QueryEmailMethod(accountId);
     if (filter != null) method.filter = filter;
     if (limit != null) method.limit = limit;
+    if (position != null) method.position = position;
     if (collapseThreads != null) method.addCollapseThreads(collapseThreads);
 
     final builder = JmapRequestBuilder(client, ProcessingInvocation());
@@ -235,6 +243,87 @@ class EmailUtil {
 
     if (parsed == null) throw Exception('SetEmailSubmissionResponse parse failure');
     return parsed;
+  }
+
+  /// Downloads the raw MIME content of an email as bytes.
+  ///
+  /// Fetches the email to get its blobId, then downloads the blob via HTTP.
+  static Future<Uint8List> downloadEmailMime({
+    required HttpClient client,
+    required AccountId accountId,
+    required String emailId,
+    required Dio dio,
+    required String downloadUrlTemplate,
+    required String authorization,
+  }) async {
+    final email = await getEmailById(
+      client: client,
+      accountId: accountId,
+      id: emailId,
+    );
+
+    if (email == null) throw Exception('Email not found: $emailId');
+
+    final blobId = email.blobId?.value;
+    if (blobId == null) throw Exception('Email $emailId has no blobId');
+
+    return FileNodeUtil.downloadBlobRaw(
+      dio: dio,
+      downloadUrlTemplate: downloadUrlTemplate,
+      accountId: accountId.id.value,
+      blobId: blobId,
+      name: 'message.eml',
+      authorization: authorization,
+    );
+  }
+
+  /// Uploads raw MIME bytes as a blob then imports it as an email via Email/import.
+  ///
+  /// Returns the id of the newly created email, or throws on failure.
+  static Future<String> importEmailMime({
+    required HttpClient client,
+    required AccountId accountId,
+    required Uint8List mimeBytes,
+    required String mailboxId,
+    Map<String, bool>? keywords,
+  }) async {
+    final blob = await BlobUtil.uploadBlobFromBytes(
+      client: client,
+      accountId: accountId,
+      content: mimeBytes,
+    );
+
+    if (blob?.blobId == null) throw Exception('Blob upload failed');
+
+    final cid = Id('import-${DateTime.now().millisecondsSinceEpoch % 1000000}');
+    final method = ImportEmailMethod(accountId, {
+      cid: EmailImportObject(
+        blobId: blob!.blobId!,
+        mailboxIds: {mailboxId: true},
+        keywords: keywords,
+      ),
+    });
+
+    final builder = JmapRequestBuilder(client, ProcessingInvocation());
+    final inv = builder.invocation(method);
+    final resp = await (builder..usings(method.requiredCapabilities)).build().execute();
+
+    final parsed = resp.parse<ImportEmailResponse>(
+      inv.methodCallId,
+      ImportEmailResponse.deserialize,
+    );
+
+    if (parsed == null) throw Exception('ImportEmailResponse parse failure');
+
+    final notCreated = parsed.notCreated;
+    if (notCreated != null && notCreated.isNotEmpty) {
+      final err = notCreated.values.first;
+      throw Exception('Email/import notCreated: ${err.type.value} - ${err.description}');
+    }
+
+    final id = parsed.created?[cid]?.id?.id.value;
+    if (id == null) throw Exception('Email/import: no id in created response');
+    return id;
   }
 
   /// Internal helper for GetEmail calls.

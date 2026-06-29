@@ -295,7 +295,7 @@ class EmailId with EquatableMixin {
     if (id is ReferenceId) {
       return '${(id as ReferenceId).prefix.value}${(id as ReferenceId).id.value}';
     }
-    return super.toString();
+    return id.value;
   }
 
   @override
