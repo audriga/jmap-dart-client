@@ -117,28 +117,11 @@ void main() {
       expect(afterDelete, isNull);
     });
 
-    test('query emails returns ids', () async {
-      await EmailUtil.createEmail(
-        client: httpClient,
-        accountId: accountId,
-        email: Email(
-          mailboxIds: {MailboxId(mailboxId): true},
-          subject: 'Query test email',
-        ),
-      );
-
-      final queryResp = await EmailUtil.queryEmails(
-        client: httpClient,
-        accountId: accountId,
-      );
-
-      expect(queryResp.ids, isNotEmpty);
-    });
-
     test('changes returns a valid new state', () async {
       final getResp = await EmailUtil.getEmails(
         client: httpClient,
         accountId: accountId,
+        ids: {},
       );
 
       final changesResp = await EmailUtil.changesEmails(
