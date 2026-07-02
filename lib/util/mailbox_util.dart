@@ -105,7 +105,7 @@ class MailboxUtil {
     return _executeSet(client: client, method: method);
   }
 
-  /// Fetches all mailbox ids by paging through Mailbox/query in batches until all ids are collected.
+  /// Fetches every matching mailbox id, page by page, until there's nothing left to fetch.
   static Future<List<Id>> getAllMailboxIds({
     required HttpClient client,
     required AccountId accountId,
@@ -136,7 +136,7 @@ class MailboxUtil {
     return allIds;
   }
 
-  /// Fetches all mailboxes by first collecting all ids via getAllMailboxIds, then fetching the actual mailbox objects in batches.
+  /// Fetches all mailboxes by first collecting all ids, then fetching the actual mailbox objects in batches.
   static Future<List<Mailbox>> getAllMailboxes({
     required HttpClient client,
     required AccountId accountId,

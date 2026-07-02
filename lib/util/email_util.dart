@@ -25,7 +25,9 @@ import 'package:jmap_dart_client/jmap/mail/email/submission/email_submission.dar
 import 'package:jmap_dart_client/jmap/mail/email/submission/email_submission_id.dart';
 import 'package:jmap_dart_client/jmap/mail/email/submission/set/set_email_submission_method.dart';
 import 'package:jmap_dart_client/jmap/mail/email/submission/set/set_email_submission_response.dart';
+import 'package:jmap_dart_client/jmap/mail/mailbox/mailbox.dart';
 import 'package:jmap_dart_client/util/file_node_util.dart';
+import 'package:jmap_dart_client/util/mailbox_util.dart';
 
 /// Utility class for creating, updating, deleting, and fetching emails.
 class EmailUtil {
@@ -108,12 +110,53 @@ class EmailUtil {
     return _executeSet(client: client, method: method);
   }
 
-  /// Fetches all email ids via paged Email/query requests.
+  /// Fetches all email ids, one page at a time, until there are no more
+  /// left. Some servers return nothing for an unfiltered query even though
+  /// emails exist, so if [filter] is left empty and the first page comes
+  /// back empty, this falls back to querying each mailbox individually.
   static Future<List<Id>> getAllEmailIds({
     required HttpClient client,
     required AccountId accountId,
     EmailFilterCondition? filter,
     int batchSize = 50,
+  }) async {
+    final ids = await _queryAllEmailIds(
+      client: client,
+      accountId: accountId,
+      filter: filter,
+      batchSize: batchSize,
+    );
+
+    if (ids.isNotEmpty || filter != null) return ids;
+
+    // Unfiltered query returned nothing; some servers only support
+    // Email/query when scoped to a mailbox, so fall back to merging
+    // results queried per mailbox.
+    final mailboxIds = await MailboxUtil.getAllMailboxIds(
+      client: client,
+      accountId: accountId,
+      batchSize: batchSize,
+    );
+
+    final mergedIds = <Id>{};
+    for (final mailboxId in mailboxIds) {
+      mergedIds.addAll(await _queryAllEmailIds(
+        client: client,
+        accountId: accountId,
+        filter: EmailFilterCondition(inMailbox: MailboxId(mailboxId)),
+        batchSize: batchSize,
+      ));
+    }
+
+    return mergedIds.toList();
+  }
+
+  /// Fetches every matching email id, page by page, until there's nothing left to fetch.
+  static Future<List<Id>> _queryAllEmailIds({
+    required HttpClient client,
+    required AccountId accountId,
+    EmailFilterCondition? filter,
+    required int batchSize,
   }) async {
     final allIds = <Id>[];
     var position = 0;
