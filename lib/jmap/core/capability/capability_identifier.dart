@@ -21,6 +21,7 @@ class CapabilityIdentifier with EquatableMixin {
   static final jmapMailboxClear = CapabilityIdentifier(Uri.parse('com:linagora:params:jmap:mailbox:clear'));
   static final jmapFileNode = CapabilityIdentifier(Uri.parse('urn:ietf:params:jmap:filenode'));
   static final jmapBlob = CapabilityIdentifier(Uri.parse('urn:ietf:params:jmap:blob'));
+  static final jmapSieve = CapabilityIdentifier(Uri.parse('urn:ietf:params:jmap:sieve'));
 
 
   final Uri value;
