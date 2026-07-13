@@ -68,8 +68,7 @@ class SieveUtil {
   }
 
   /// Uploads Sieve script source as a Blob, then creates a SieveScript
-  /// referencing that blob. The Sieve script content is treated as an
-  /// opaque string; no Sieve parsing is performed on the client.
+  /// referencing that blob.
   static Future<String?> createSieveScript({
     required HttpClient client,
     required AccountId accountId,
