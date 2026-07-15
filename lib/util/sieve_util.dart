@@ -1,5 +1,9 @@
+import 'dart:convert';
+
+import 'package:dio/dio.dart';
 import 'package:jmap_dart_client/http/http_client.dart';
 import 'package:jmap_dart_client/jmap/account_id.dart';
+import 'package:jmap_dart_client/jmap/core/error/method/exception/error_method_response_exception.dart';
 import 'package:jmap_dart_client/jmap/core/id.dart';
 import 'package:jmap_dart_client/jmap/core/patch_object.dart';
 import 'package:jmap_dart_client/jmap/core/request/request_invocation.dart';
@@ -69,23 +73,41 @@ class SieveUtil {
 
   /// Uploads Sieve script source as a Blob, then creates a SieveScript
   /// referencing that blob.
+  ///
+  /// Note: if [httpUploadUrl] is provided, content is POSTed to the HTTP
+  /// upload endpoint instead of using Blob/upload. Required for servers
+  /// like Cyrus where Blob/upload blobs are not persisted across requests.
   static Future<String?> createSieveScript({
     required HttpClient client,
     required AccountId accountId,
     required String name,
     required String content,
+    String? httpUploadUrl,
   }) async {
-    final blob = await BlobUtil.uploadBlobFromText(
-      client: client,
-      accountId: accountId,
-      content: content,
-    );
+    final String blobId;
 
-    if (blob?.blobId == null) throw Exception('Blob upload failed');
+    if (httpUploadUrl != null) {
+      final resp = await client.post(
+        httpUploadUrl,
+        data: utf8.encode(content),
+        options: Options(contentType: 'application/octet-stream'),
+      );
+      final id = resp['blobId'];
+      if (id == null) throw Exception('Blob upload failed');
+      blobId = id as String;
+    } else {
+      final blob = await BlobUtil.uploadBlobFromText(
+        client: client,
+        accountId: accountId,
+        content: content,
+      );
+      if (blob?.blobId == null) throw Exception('Blob upload failed');
+      blobId = blob!.blobId!;
+    }
 
     final cid = Id('sieve-${DateTime.now().millisecondsSinceEpoch % 1000000}');
     final method = SetSieveScriptMethod(accountId)
-      ..addCreate(cid, SieveScript(name: name, blobId: blob!.blobId!));
+      ..addCreate(cid, SieveScript(name: name, blobId: blobId));
 
     final resp = await _executeSet(client: client, method: method);
     return resp.created?[cid]?.id?.value;
@@ -110,26 +132,46 @@ class SieveUtil {
 
   /// Turns on the given SieveScript, replacing whichever script was
   /// previously active (a server can only have one active script at a time).
+  ///
+  /// Note: pairs the activate with a dummy update because Cyrus requires at
+  /// least one create, update, or destroy in the same call.
   static Future<SetSieveScriptResponse> activateSieveScript({
     required HttpClient client,
     required AccountId accountId,
     required String id,
     MethodCallId? methodCallId,
-  }) {
+  }) async {
+    final script = await getSieveScriptById(
+      client: client,
+      accountId: accountId,
+      id: id,
+    );
+    final currentName = script?.name ?? id;
+
     final method = SetSieveScriptMethod(accountId)
+      ..addUpdates({Id(id): PatchObject({'name': currentName})})
       ..onSuccessActivateScript = id;
     return _executeSet(client: client, method: method, methodCallId: methodCallId);
   }
 
   /// Turns off whichever SieveScript is currently active, if any.
+  ///
+  /// Note: tries the RFC key first; falls back to the lowercase-s variant
+  /// that Cyrus incorrectly uses.
   static Future<SetSieveScriptResponse> deactivateActiveSieveScript({
     required HttpClient client,
     required AccountId accountId,
     MethodCallId? methodCallId,
-  }) {
-    final method = SetSieveScriptMethod(accountId)
-      ..onSuccessDeactivateScript = true;
-    return _executeSet(client: client, method: method, methodCallId: methodCallId);
+  }) async {
+    try {
+      final method = SetSieveScriptMethod(accountId)
+        ..onSuccessDeactivateScript = true;
+      return await _executeSet(client: client, method: method, methodCallId: methodCallId);
+    } on ErrorMethodResponseException {
+      final method = SetSieveScriptMethod(accountId)
+        ..onSuccessDeactivatescript = true;
+      return _executeSet(client: client, method: method, methodCallId: methodCallId);
+    }
   }
 
   /// Deletes a SieveScript by id.

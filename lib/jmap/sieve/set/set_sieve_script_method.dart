@@ -16,6 +16,10 @@ class SetSieveScriptMethod extends SetMethod<SieveScript> {
   /// Turns off whichever script is currently active, once the call succeeds.
   bool? onSuccessDeactivateScript;
 
+  // Cyrus has a typo: it checks 'onSuccessDeactivatescript' (lowercase s) and
+  // rejects the RFC key above. This field is used as a fallback for Cyrus.
+  bool? onSuccessDeactivatescript;
+
   @override
   MethodName get methodName => MethodName('SieveScript/set');
 
@@ -51,6 +55,7 @@ class SetSieveScriptMethod extends SetMethod<SieveScript> {
 
     writeNotNull('onSuccessActivateScript', onSuccessActivateScript);
     writeNotNull('onSuccessDeactivateScript', onSuccessDeactivateScript);
+    writeNotNull('onSuccessDeactivatescript', onSuccessDeactivatescript);
 
     return val;
   }
@@ -64,5 +69,6 @@ class SetSieveScriptMethod extends SetMethod<SieveScript> {
         destroy,
         onSuccessActivateScript,
         onSuccessDeactivateScript,
+        onSuccessDeactivatescript,
       ];
 }
