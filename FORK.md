@@ -5,7 +5,9 @@
   * We additionally added [utility functions](#jmap-methods-and-corresponding-utils) for each object/jmap-method that make building the request easier.
   * [AddressBook and Contacts](#addressbook-and-contacts) a given account can have multiple address books, and contacts belong to one or more address books.
   * [Calendar and CalendarEvents](#calendar-and-calendarevents) a given account can have multiple calendars, and events belong to one or more calendars.
+  * [Mailbox and Email](#mailbox-and-email)
   * [File Nodes and Blobs](#file-nodes-and-blobs)
+  * [Sieve Scripts](#sieve-scripts)
 * We have tested interaction with these JMAP objects against three JMAP server implementations, see [JMAP Servers](#jmap-servers) and [Notes on Testing](#notes-on-testing) for details.
 
 ## JMAP Servers
@@ -14,7 +16,7 @@ We have mainly tested against three JMAP server implementations:
 * [OpenXPort Core](https://github.com/audriga/openxport-jmap/tree/main)-Enabled (modified) RoundCube and Nextcloud servers
   * Tested contacts and calendar-events
 * [Cyrus](https://www.cyrusimap.org/3.6/imap/download/installation/http/jmap.html): Tested contacts and calendar-events
-* [Stalwart](https://github.com/stalwartlabs/stalwart): Tested contacts, address books, calendar-events, calendars, file-nodes, and blobs
+* [Stalwart](https://github.com/stalwartlabs/stalwart): Tested contacts, address books, calendar-events, calendars, file-nodes, blobs, and sieve scripts
 
 ## JMAP Methods and Corresponding Utils
 
@@ -173,6 +175,80 @@ final setResponse = await CalendarEventUtil.deleteCalendarEvent(client, accountI
 final changesResponse = await CalendarEventUtil.changesCalendarEvents(client, accountId, sinceState);
 ```
 
+## Mailbox and Email
+As mentioned in the overview: A given account can have multiple mailboxes, and emails belong to one or more mailboxes.
+Mailboxes and Emails are two separate JMAP objects, where emails have a map of mailboxes, indicating to which they belong.
+
+You are able to simply get all emails (regardless to which mailbox they belong) however to create an email, you need to specify at least one mailbox it should be included in.
+
+### Mailboxes
+
+Hold [Emails](#emails). Main properties of mailboxes are:
+
+* name
+* parentId
+* role
+* sortOrder
+* totalEmails / unreadEmails
+* totalThreads / unreadThreads
+* myRights
+* See also [spec Mailboxes](https://jmap.io/spec-mail.html#mailboxes)
+
+Utility Methods:
+```dart
+// Mailbox/get
+final getResponse = await MailboxUtil.getMailboxes(client: client, accountId: accountId);
+final mailbox = await MailboxUtil.getMailboxById(client: client, accountId: accountId, id: mailboxId);
+final mailboxes = await MailboxUtil.getAllMailboxes(client: client, accountId: accountId);
+// Mailbox/query
+final queryResponse = await MailboxUtil.queryMailboxes(client: client, accountId: accountId, filter: filter);
+final ids = await MailboxUtil.getAllMailboxIds(client: client, accountId: accountId, filter: filter);
+// Mailbox/set
+final setResponse = await MailboxUtil.setMailboxes(client: client, accountId: accountId, create: createMap, update: updateMap, destroy: destroyIds);
+final setResponse = await MailboxUtil.createMailbox(client: client, accountId: accountId, mailbox: mailbox);
+final setResponse = await MailboxUtil.updateMailbox(client: client, accountId: accountId, id: mailboxId, patch: patch);
+final setResponse = await MailboxUtil.deleteMailbox(client: client, accountId: accountId, id: mailboxId, removeEmails: true);
+// Mailbox/changes
+final changesResponse = await MailboxUtil.changesMailboxes(client: client, accountId: accountId, sinceState: sinceState);
+```
+
+### Emails
+
+Represents a single email message. Main properties of emails are:
+
+* mailboxIds
+* keywords
+* subject
+* from / to / cc / bcc / replyTo
+* receivedAt / sentAt
+* textBody / htmlBody / attachments
+* blobId (the raw MIME message, as a Blob)
+* See also [spec Emails](https://jmap.io/spec-mail.html#emails)
+
+Utility Methods:
+```dart
+// Email/get
+final getResponse = await EmailUtil.getEmails(client: client, accountId: accountId);
+final email = await EmailUtil.getEmailById(client: client, accountId: accountId, id: emailId);
+final emails = await EmailUtil.getAllEmails(client: client, accountId: accountId);
+// Email/query
+final queryResponse = await EmailUtil.queryEmails(client: client, accountId: accountId, filter: filter);
+final ids = await EmailUtil.getAllEmailIds(client: client, accountId: accountId, filter: filter);
+// Email/set
+final setResponse = await EmailUtil.setEmails(client: client, accountId: accountId, create: createMap, update: updateMap, destroy: destroyIds);
+final setResponse = await EmailUtil.createEmail(client: client, accountId: accountId, email: email);
+final setResponse = await EmailUtil.updateEmail(client: client, accountId: accountId, id: emailId, patch: patch);
+final setResponse = await EmailUtil.deleteEmail(client: client, accountId: accountId, id: emailId);
+// Email/changes
+final changesResponse = await EmailUtil.changesEmails(client: client, accountId: accountId, sinceState: sinceState);
+// EmailSubmission/set - sends a created/existing email via EmailSubmission/set
+final submitResponse = await EmailUtil.sendEmail(client: client, accountId: accountId, submission: submission);
+// Email/import - imports raw MIME bytes as a new email
+final id = await EmailUtil.importEmailMime(client: client, accountId: accountId, mimeBytes: bytes, mailboxId: mailboxId);
+// Downloads the raw MIME content of an email (via its blobId)
+final bytes = await EmailUtil.downloadEmailMime(client: client, accountId: accountId, emailId: emailId, dio: dio, downloadUrlTemplate: template, authorization: auth);
+```
+
 ## File Nodes and Blobs
 A given file is represented via two JMAP Objects: A `Blob`, which is the actualy binary data, and a `FileNode`, which contains the name, metadata, and a reference to the corresponding blob.
 
@@ -224,6 +300,35 @@ final ChangesFileNodeResponse changesResponse = await FileNodeUtil.changesFileNo
 ```
 
 
+
+## Sieve Scripts
+Sieve scripts (mail filtering rules) are represented via a `SieveScript` JMAP object. Like FileNodes, the actual script source is stored as a `Blob` and referenced by `blobId` - so uploading a script reuses the same `Blob/upload` path as [File Nodes](#file-nodes-and-blobs). We treat the script content as a plain string; this library does not parse or validate Sieve syntax.
+
+Main properties of a SieveScript are:
+
+* name
+* blobId
+* isActive (read-only; see below for how to change it)
+* See also [draft-ietf-jmap-sieve](https://datatracker.ietf.org/doc/draft-ietf-jmap-sieve/)
+
+Only one script can be active per account at a time. `isActive` is set by the server and cannot be passed in a create or update - instead, activating or deactivating a script is done via two special arguments on `SieveScript/set`: `onSuccessActivateScript` (the id of the script to turn on) and `onSuccessDeactivateScript` (turns off whichever script is currently active). We expose these as their own utility functions rather than through `updateSieveScript`.
+
+Utility functions:
+```dart
+// SieveScript/get
+final GetSieveScriptResponse getResponse = await SieveUtil.getSieveScripts(client, accountId);
+final SieveScript? script = await SieveUtil.getSieveScriptById(client, accountId, scriptId);
+// SieveScript/set
+final String id = await SieveUtil.createSieveScript(client, accountId, name, content);
+final setResponse = await SieveUtil.updateSieveScript(client, accountId, id, patch);
+final setResponse = await SieveUtil.deleteSieveScript(client, accountId, scriptId);
+final setResponse = await SieveUtil.activateSieveScript(client, accountId, scriptId);
+final setResponse = await SieveUtil.deactivateActiveSieveScript(client, accountId);
+// SieveScript/changes
+final ChangesSieveScriptResponse changesResponse = await SieveUtil.changesSieveScripts(client, accountId, sinceState);
+```
+
+Note: `SieveScript/changes` is part of the spec, but we are not aware of a working server implementation of it yet - Stalwart v1.0.0 returns an `unknownMethod` error for it.
 
 ## Notes on Testing
 
