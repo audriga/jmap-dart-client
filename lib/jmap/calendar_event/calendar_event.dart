@@ -11,7 +11,8 @@ import 'package:jmap_dart_client/http/converter/calendar_event/participant_value
 import 'package:jmap_dart_client/jmap/calendar_event/keyword.dart';
 import 'package:jmap_dart_client/http/converter/calendar_event/location_value_converter.dart';
 import 'package:jmap_dart_client/jmap/calendar_event/location_value.dart';
-import 'package:jmap_dart_client/jmap/calendar_event/recurrence_overrides.dart';
+import 'package:jmap_dart_client/http/converter/calendar_event/recurrence_override_converter.dart';
+import 'package:jmap_dart_client/jmap/core/patch_object.dart';
 import 'package:jmap_dart_client/util/util.dart';
 
 @UnsignedIntNullableConverter()
@@ -101,7 +102,7 @@ class CalendarEvent with EquatableMixin {
   final Map<String, bool>? calendarIds;
 
   @JsonKey(includeIfNull: false)
-  final RecurrenceOverrides? recurrenceOverrides;
+  final Map<String, PatchObject>? recurrenceOverrides;
 
   @JsonKey(includeIfNull: false)
   final String? organizerCalendarAddress;
@@ -287,10 +288,8 @@ CalendarEvent _$CalendarEventFromJson(Map<String, dynamic> json) =>
           (json['calendarIds'] as Map<String, dynamic>?)?.map((key, value) {
         return MapEntry(key, parseBoolNullable(value) ?? false);
       }),
-      recurrenceOverrides: json['recurrenceOverrides'] != null
-          ? RecurrenceOverrides.fromJson(
-              json['recurrenceOverrides'] as Map<String, dynamic>)
-          : null,
+      recurrenceOverrides: const RecurrenceOverridesConverter()
+          .fromJson(json['recurrenceOverrides'] as Map<String, dynamic>?),
       organizerCalendarAddress:
           json['organizerCalendarAddress'] as String?,
       useDefaultAlerts: parseBoolNullable(json['useDefaultAlerts']),
@@ -362,7 +361,8 @@ Map<String, dynamic> _$CalendarEventToJson(CalendarEvent instance) {
   );
   writeNotNull('freeBusyStatus', instance.freeBusyStatus);
   writeNotNull('calendarIds', instance.calendarIds);
-  writeNotNull('recurrenceOverrides', instance.recurrenceOverrides?.toJson());
+  writeNotNull('recurrenceOverrides',
+      const RecurrenceOverridesConverter().toJson(instance.recurrenceOverrides));
   writeNotNull('organizerCalendarAddress', instance.organizerCalendarAddress);
   writeNotNull('useDefaultAlerts', instance.useDefaultAlerts);
   writeNotNull('mayInviteSelf', instance.mayInviteSelf);
