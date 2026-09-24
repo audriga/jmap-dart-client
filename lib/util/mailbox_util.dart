@@ -12,6 +12,7 @@ import 'package:jmap_dart_client/jmap/mail/mailbox/get/get_mailbox_method.dart';
 import 'package:jmap_dart_client/jmap/mail/mailbox/get/get_mailbox_response.dart';
 import 'package:jmap_dart_client/jmap/mail/mailbox/mailbox.dart';
 import 'package:jmap_dart_client/jmap/mail/mailbox/mailbox_filter_condition.dart';
+import 'package:jmap_dart_client/jmap/core/properties/properties.dart';
 import 'package:jmap_dart_client/jmap/mail/mailbox/query/query_mailbox_method.dart';
 import 'package:jmap_dart_client/jmap/mail/mailbox/query/query_mailbox_response.dart';
 import 'package:jmap_dart_client/jmap/mail/mailbox/set/set_mailbox_method.dart';
@@ -26,10 +27,12 @@ class MailboxUtil {
     required HttpClient client,
     required AccountId accountId,
     Set<Id>? ids,
+    Set<String>? properties,
     MethodCallId? methodCallId,
   }) async {
     final method = GetMailboxMethod(accountId);
     if (ids != null) method.ids = ids;
+    if (properties != null) method.properties = Properties(properties);
 
     return _executeGet(client: client, method: method, methodCallId: methodCallId);
   }
@@ -39,11 +42,13 @@ class MailboxUtil {
     required HttpClient client,
     required AccountId accountId,
     required String id,
+    Set<String>? properties,
   }) async {
     final resp = await getMailboxes(
       client: client,
       accountId: accountId,
       ids: {Id(id)},
+      properties: properties,
     );
     return resp.list.isEmpty ? null : resp.list.first;
   }

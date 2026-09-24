@@ -15,6 +15,11 @@ class MailboxRights with EquatableMixin {
   final bool mayDelete;
   final bool maySubmit;
 
+  // Stalwart-specific extension right, not part of the base JMAP Mail spec.
+  // Only meaningful on shareWith entries, not on myRights.
+  @JsonKey(includeIfNull: false)
+  final bool? mayShare;
+
   MailboxRights(
       this.mayReadItems,
       this.mayAddItems,
@@ -24,7 +29,8 @@ class MailboxRights with EquatableMixin {
       this.mayCreateChild,
       this.mayRename,
       this.mayDelete,
-      this.maySubmit);
+      this.maySubmit,
+      {this.mayShare});
 
   factory MailboxRights.fromJson(Map<String, dynamic> json) {
     return _$MailboxRightsFromJson(json);
@@ -34,5 +40,5 @@ class MailboxRights with EquatableMixin {
 
   @override
   List<Object?> get props => [mayReadItems, mayAddItems, mayRemoveItems, maySetSeen,
-    maySetKeywords, mayCreateChild, mayRename, mayDelete, maySubmit];
+    maySetKeywords, mayCreateChild, mayRename, mayDelete, maySubmit, mayShare];
 }

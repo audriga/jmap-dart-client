@@ -32,6 +32,8 @@ Mailbox _$MailboxFromJson(Map<String, dynamic> json) => Mailbox(
         (k, e) => MapEntry(
             k, (e as List<dynamic>?)?.map((e) => e as String).toList()),
       ),
+      shareWith: const MailboxRightsMapConverter()
+          .fromJson(json['shareWith'] as Map<String, dynamic>?),
     );
 
 Map<String, dynamic> _$MailboxToJson(Mailbox instance) {
@@ -64,5 +66,7 @@ Map<String, dynamic> _$MailboxToJson(Mailbox instance) {
   writeNotNull('namespace',
       const NamespaceNullableConverter().toJson(instance.namespace));
   writeNotNull('rights', instance.rights);
+  writeNotNull('shareWith',
+      const MailboxRightsMapConverter().toJson(instance.shareWith));
   return val;
 }

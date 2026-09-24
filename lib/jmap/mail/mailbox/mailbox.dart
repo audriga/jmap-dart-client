@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:jmap_dart_client/http/converter/is_subscribed_converter.dart';
 import 'package:jmap_dart_client/http/converter/mailbox_id_nullable_converter.dart';
 import 'package:jmap_dart_client/http/converter/mailbox_name_converter.dart';
+import 'package:jmap_dart_client/http/converter/mailbox_rights_map_converter.dart';
 import 'package:jmap_dart_client/http/converter/namespace_nullable_converter.dart';
 import 'package:jmap_dart_client/http/converter/role_converter.dart';
 import 'package:jmap_dart_client/http/converter/sort_order_converter.dart';
@@ -68,6 +69,10 @@ class Mailbox with EquatableMixin {
   @JsonKey(includeIfNull: false)
   final Map<String, List<String>?>? rights;
 
+  @MailboxRightsMapConverter()
+  @JsonKey(includeIfNull: false)
+  final Map<String, MailboxRights>? shareWith;
+
   Mailbox({
     this.id,
     this.name,
@@ -81,7 +86,8 @@ class Mailbox with EquatableMixin {
     this.myRights,
     this.isSubscribed,
     this.namespace,
-    this.rights
+    this.rights,
+    this.shareWith
   });
 
   factory Mailbox.fromJson(Map<String, dynamic> json) => _$MailboxFromJson(json);
@@ -102,7 +108,8 @@ class Mailbox with EquatableMixin {
     myRights,
     isSubscribed,
     namespace,
-    rights
+    rights,
+    shareWith
   ];
 }
 
