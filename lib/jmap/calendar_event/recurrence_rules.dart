@@ -31,7 +31,7 @@ class RecurrenceRules extends Equatable {
   @JsonKey(includeIfNull: false)
   final String? until;
 
-  const RecurrenceRules({
+  RecurrenceRules({
     this.frequency,
     this.type = 'RecurrenceRule',
     this.interval,
@@ -40,7 +40,19 @@ class RecurrenceRules extends Equatable {
     this.byMonth,
     this.bySetPosition,
     this.until,
-  });
+  }) {
+    // count and until are mutually exclusive per RFC 5545. A server building
+    // an iCalendar RRULE from both would produce an invalid recurrence,
+    // which can break calendar clients (e.g. Nextcloud) trying to expand it.
+    // Uses a real throw rather than assert(), since assert is stripped in
+    // release builds and is not enabled by default for `dart run`.
+    if (count != null && until != null) {
+      throw ArgumentError(
+        'RecurrenceRules cannot set both count and until, they are mutually '
+        'exclusive per RFC 5545.',
+      );
+    }
+  }
 
   factory RecurrenceRules.fromJson(Map<String, dynamic> json) =>
       _$RecurrenceRulesFromJson(json);

@@ -54,7 +54,6 @@ void main() {
          recurrenceRule: RecurrenceRules(
           frequency: weekly,
           interval: 1,
-          count: 5,
           byDay: {
             ByDay(day: 'mo'),
             ByDay(day: 'we'),
@@ -209,7 +208,6 @@ void main() {
         recurrenceRule: RecurrenceRules(
           frequency: weekly,
           interval: 1,
-          count: 5,
           byDay: {
             ByDay(day: 'mo'),
             ByDay(day: 'we'),
@@ -549,6 +547,27 @@ void main() {
 
       expect(parsed.accountId.id.value, 'acc1');
       expect(parsed.destroyed!.map((e) => e.value), contains('e1#event.ics'));
+    });
+  });
+
+  group('RecurrenceRules validation', () {
+    // count and until are mutually exclusive per RFC 5545. A server
+    // building an iCalendar RRULE from both would produce an invalid
+    // recurrence, which can break calendar clients trying to expand it
+    // (this happened to a Nextcloud calendar in Mantis 0006295).
+    test('count and until together throws', () {
+      expect(
+        () => RecurrenceRules(count: 5, until: '2023-12-31T23:59:59'),
+        throwsA(isA<ArgumentError>()),
+      );
+    });
+
+    test('count alone is fine', () {
+      expect(() => RecurrenceRules(count: 5), returnsNormally);
+    });
+
+    test('until alone is fine', () {
+      expect(() => RecurrenceRules(until: '2023-12-31T23:59:59'), returnsNormally);
     });
   });
 }

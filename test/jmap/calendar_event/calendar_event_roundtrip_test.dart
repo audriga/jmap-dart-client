@@ -100,7 +100,6 @@ void main() {
       recurrenceRule: RecurrenceRules(
         frequency: weekly,
         interval: 1,
-        count: 5,
         byDay: {
           ByDay(day: "mo"),
           ByDay(day: "we"),
